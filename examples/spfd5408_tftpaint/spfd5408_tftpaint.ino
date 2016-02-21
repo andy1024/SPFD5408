@@ -4,6 +4,8 @@
 
 // Modified for SPFD5408 Library by Joao Lopes
 // Version 0.9.2 - Rotation for Mega
+// +small adjustments for one 2.4" chinese LCD shield
+
 
 // *** SPFD5408 change -- Begin
 #include <SPFD5408_Adafruit_GFX.h>    // Core graphics library
@@ -49,10 +51,10 @@
 //   D6 connects to digital pin 39
 //   D7 connects to digital pin 40
 
-#define YP A1  // must be an analog pin, use "An" notation!
-#define XM A2  // must be an analog pin, use "An" notation!
-#define YM 7   // can be a digital pin
-#define XP 6   // can be a digital pin
+#define YP A2  // must be an analog pin, use "An" notation!
+#define XM A3  // must be an analog pin, use "An" notation!
+#define YM 8   // can be a digital pin
+#define XP 9   // can be a digital pin
 
 // Original values
 //#define TS_MINX 150
@@ -60,11 +62,12 @@
 //#define TS_MAXX 920
 //#define TS_MAXY 940
 
-// Calibrate values
-#define TS_MINX 125
-#define TS_MINY 85
-#define TS_MAXX 965
-#define TS_MAXY 905
+// Calibrated values
+#define TS_MINX 225
+#define TS_MINY 110
+#define TS_MAXX 950
+#define TS_MAXY 825
+
 
 // For better pressure precision, we need to know the resistance
 // between X+ and X- Use any multimeter to read it
@@ -130,7 +133,7 @@ void setup(void) {
 
   tft.begin(0x9341); // SDFP5408
 
-  tft.setRotation(0); // Need for the Mega, please changed for your choice or rotation initial
+  tft.setRotation(1); // Need for the Mega, please changed for your choice or rotation initial
 
   // Border
 
@@ -172,7 +175,8 @@ void setup(void) {
   tft.fillRect(BOXSIZE*3, 0, BOXSIZE, BOXSIZE, CYAN);
   tft.fillRect(BOXSIZE*4, 0, BOXSIZE, BOXSIZE, BLUE);
   tft.fillRect(BOXSIZE*5, 0, BOXSIZE, BOXSIZE, MAGENTA);
-  // tft.fillRect(BOXSIZE*6, 0, BOXSIZE, BOXSIZE, WHITE);
+  tft.fillRect(BOXSIZE*6, 0, BOXSIZE, BOXSIZE, WHITE);
+  tft.fillRect(BOXSIZE*7, 0, BOXSIZE, BOXSIZE, BLACK);
  
   tft.drawRect(0, 0, BOXSIZE, BOXSIZE, WHITE);
   currentcolor = RED;
@@ -204,26 +208,31 @@ void loop()
     Serial.print("\tY = "); Serial.print(p.y);
     Serial.print("\tPressure = "); Serial.println(p.z);
     */
+
     
     if (p.y < (TS_MINY-5)) {
-      Serial.println("erase");
+      //Serial.println("erase");
       // press the bottom of the screen to erase 
       tft.fillRect(0, BOXSIZE, tft.width(), tft.height()-BOXSIZE, BLACK);
     }
     // scale from 0->1023 to tft.width
 
     // *** SPFD5408 change -- Begin
-    // Bug in in original code
-    //p.x = map(p.y, TS_MINY, TS_MAXY, 0, tft.height());
+    TSPoint temp;
+    temp.x=p.x;
+    temp.y=p.y;
     p.x = map(p.x, TS_MINX, TS_MAXX, 0, tft.width());
-    // *** SPFD5408 change -- End
     p.y = map(p.y, TS_MINY, TS_MAXY, 0, tft.height());;
 
-    /*
-    Serial.print("("); Serial.print(p.x);
-    Serial.print(", "); Serial.print(p.y);
-    Serial.println(")");
-    */
+    //DEBUG/Calibration info
+//    tft.setTextColor(WHITE); 
+//    tft.setTextSize(1);
+//    tft.fillRect(5,60, 140, 20,BLACK);
+//    tft.setCursor(5, 60);
+//    tft.print("Pt : ");tft.print(temp.x);tft.print(" : ");tft.println(temp.y);
+//    tft.setCursor(5, 70);
+//    tft.print("Map: ");tft.print(p.x);tft.print(" : ");tft.println(p.y);
+
     if (p.y < BOXSIZE) {
        oldcolor = currentcolor;
 
@@ -245,6 +254,12 @@ void loop()
        } else if (p.x < BOXSIZE*6) {
          currentcolor = MAGENTA;
          tft.drawRect(BOXSIZE*5, 0, BOXSIZE, BOXSIZE, WHITE);
+       } else if (p.x < BOXSIZE*7) {
+         currentcolor = WHITE;
+         tft.drawRect(BOXSIZE*6, 0, BOXSIZE, BOXSIZE, WHITE);
+       } else if (p.x < BOXSIZE*8) {
+         currentcolor = BLACK;
+         tft.drawRect(BOXSIZE*7, 0, BOXSIZE, BOXSIZE, WHITE);
        }
 
        if (oldcolor != currentcolor) {
@@ -254,6 +269,8 @@ void loop()
           if (oldcolor == CYAN) tft.fillRect(BOXSIZE*3, 0, BOXSIZE, BOXSIZE, CYAN);
           if (oldcolor == BLUE) tft.fillRect(BOXSIZE*4, 0, BOXSIZE, BOXSIZE, BLUE);
           if (oldcolor == MAGENTA) tft.fillRect(BOXSIZE*5, 0, BOXSIZE, BOXSIZE, MAGENTA);
+          if (oldcolor == WHITE) tft.fillRect(BOXSIZE*6, 0, BOXSIZE, BOXSIZE, WHITE);
+          if (oldcolor == BLACK) tft.fillRect(BOXSIZE*7, 0, BOXSIZE, BOXSIZE, BLACK);
        }
     }
     if (((p.y-PENRADIUS) > BOXSIZE) && ((p.y+PENRADIUS) < tft.height())) {
